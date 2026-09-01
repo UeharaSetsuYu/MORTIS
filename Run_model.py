@@ -10,66 +10,6 @@ from train import *
 from units.Visualization import *
 
 
-
-# def main():
-#     args = parse_args()
-#
-#
-#
-#     T = args.times  # Training times
-#     config = dataset_config(args)
-#     count = 0
-#     result_max = collections.defaultdict(list)
-#     args.alpha = 0.1
-#     args.beta = 0.01
-#     missing_rate = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-#     for missrate in missing_rate:
-#         args.missing_rate = missrate
-#         for i in range(T):
-#             print('Running times: {}'.format(count + 1))
-#             print('Seed: {}'.format(args.seed))
-#             args.top_k = i + 1
-#             print("top_k: {}".format(args.top_k))
-#             Result, Loss = Training(args, config)
-#             # Result, Loss = Training_net(args, config)
-#
-#
-#
-#             args.seed += 5
-#
-#             count += 1
-#             result_max['ACC_max'].append(max(Result['ACC']))
-#             result_max['ARI_max'].append(max(Result['ARI']))
-#             result_max['NMI_max'].append(max(Result['NMI']))
-#             result_max['PUR_max'].append(max(Result['PUR']))
-#
-#             save_lists_to_excel(Result['ACC'], Result['ARI'], Result['NMI'], Result['PUR'], args.dataset)
-#             save_lists_to_excel(Loss['Loss_All'], Loss['Loss_Adversarial'], Loss['Loss_prototype'], [], Data_name = args.dataset, filename='_Loss')
-#
-#
-#             print(f"The experiment is run {count} times, and the best result: ACC-{max(Result['ACC']): .4f}, ARI-{max(Result['ARI']): .4f}, "
-#                   f"NMI-{max(Result['NMI']): .4f}, PUR-{max(Result['PUR']): .4f}")
-#             ### Figure area
-#             # Result_Visualization(Result['ACC'], Result['ARI'], Result['NMI'])
-#
-#             # plot_multiple_curves([Loss['Loss_All'], Loss['Loss_Con'], Loss['Loss_Comp']], labels=['Loss_All', 'Loss_Con', 'Loss_Comp'])
-#
-#
-#     print(f'============= Excute {count} times result =============')
-#     print(f"ACC: mean-{np.mean(result_max['ACC_max']): .4f}, std-{np.std(result_max['ACC_max']): .4f}")
-#     print(f"ARI: mean-{np.mean(result_max['ARI_max']): .4f}, std-{np.std(result_max['ARI_max']): .4f}")
-#     print(f"NMI: mean-{np.mean(result_max['NMI_max']): .4f}, std-{np.std(result_max['NMI_max']): .4f}")
-#     print(f"PUR: mean-{np.mean(result_max['PUR_max']): .4f}, std-{np.std(result_max['PUR_max']): .4f}")
-#
-#     print(f'============= Excute All Result =============')
-#     print("All: ACC, ARI, NMI, PUR :")
-#     print(result_max['ACC_max'])
-#     print(result_max['ARI_max'])
-#     print(result_max['NMI_max'])
-#     print(result_max['PUR_max'])
-
-    # plot_melancholic_metrics(args.dataset)
-
 def main():
     args = parse_args()
 
@@ -292,7 +232,7 @@ if __name__ == '__main__':
 
     from datetime import datetime
 
-    # 获取当前的日期和时间
+    # get date
     now = datetime.now()
 
     # 格式化输出，"%Y-%m-%d %H:%M" 表示精确到分钟

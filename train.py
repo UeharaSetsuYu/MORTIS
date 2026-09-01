@@ -33,20 +33,12 @@ from units.UMVC_DATA import build_dataset_unpair
 from units.NMVC_DATA import build_dataset_nmvc
 from units.CMVC_DATA import build_dataset_Multi
 from units.unit import *
-from units.clustering import *
 from units.evaluate import *
 from units.Visualization import *
-from cluster_quality_metrics import *
 
 import torch.nn.functional as F
 from itertools import combinations
-from Metric.MTM import MTM
-from Metric.RMR import RMR
 
-########### PCC Poof ##########
-from Metric.Ablation import *
-from Metric.Prototype_Semantic_Consensus.PSC_Test import test_PSC
-from Metric.T_Visualization.plot_transition_matrix import plot_transition_matrix
 ###############################
 
 
@@ -276,8 +268,6 @@ def PrototypeMatching(latent_list, mask, epoch, config, model, args, eps=1e-8):
                 T_v = A_v @ B_v
                 loss_v = -torch.log(torch.diagonal(T_v, dim1=-2, dim2=-1).clamp_min(eps)).mean()
 
-                if (epoch + 1) % 100 == 0:
-                    print("Cross-view Prototype Reciprocity Matching Rate: ", RMR(A_v, B_v))
 
 
                 A_u = Transition(proto_u, z_v) @ transition_matrix_power(Transition(z_v, z_v), step) @ Transition(z_v, proto_v)
@@ -285,46 +275,7 @@ def PrototypeMatching(latent_list, mask, epoch, config, model, args, eps=1e-8):
                 T_u = A_u @ B_u
                 loss_u = -torch.log(torch.diagonal(T_u, dim1=-2, dim2=-1).clamp_min(eps)).mean()
 
-                if epoch == 1990:
-                    plot_heatmap_academic(
-                        T_u.detach().cpu().numpy(),
-                        save_path="transition_heatmap",
-                        x_label="Destination Prototype",
-                        y_label="Starting Prototype",
-                        title=None,
-                        cmap="GnBu"  # 冷色调，推荐
-                    )
-                    plot_heatmap_academic(
-                        A_u.detach().cpu().numpy(),
-                        save_path="transition_heatmap_A",
-                        x_label="Destination Prototype",
-                        y_label="Starting Prototype",
-                        title=None,
-                        cmap="GnBu"  # 冷色调，推荐
-                    )
 
-                if (epoch + 1) % 100 == 0:
-                    '''
-                        PCC: DHA seed-10; 
-                        W/O PCC: DHA 
-                    '''
-                    t_stats = plot_transition_matrix(
-                        0.5*(T_u + T_v),
-                        dataset=args.dataset,
-                        variant=args.PCC_Setting,  # 或 "w-o-PCC", "OT"
-                        scenario=args.data_model,
-                        rate=args.missing_rate,
-                        seed=args.seed,
-                        source_view=v,
-                        target_view=u,
-                        direction=f"return-v{v + 1}-via-v{u + 1}",
-                        epoch=epoch + 1,
-                    )
-
-                    print(
-                        "Mean return probability:",
-                        t_stats["mean_return_probability"],
-                    )
 
                 pair_loss = 0.5 * (loss_v + loss_u)
                 if visit_weight > 0.0:
@@ -363,13 +314,7 @@ def PrototypeMatching(latent_list, mask, epoch, config, model, args, eps=1e-8):
 
                 loss_list.append(fallback_loss)
 
-            if (epoch + 1) % 100 == 0:
-                # S = plot_similarity_heatmap(proto_v, proto_u, 'cuda', title = 'Prototype Similarity')
-                # # print("Symmetry: ", torch.norm(S - S.T, p = 'fro') ** 2)
-                # H_vu = mean_normalized_entropy(S, tau=0.1)
-                # H_uv = mean_normalized_entropy(S.T, tau = 0.1)
-                # MTM = 1 - 0.5 * (H_vu.item() + H_uv.item())
-                print("Cross-view Prototype Matching Trustworthiness Measure: ", MTM(proto_v, proto_u, 'cuda'))
+
 
     if len(loss_list) == 0:
         return torch.tensor(0.0, device=latent_list[0].device)
@@ -627,7 +572,7 @@ def Training(args, config):
         dataset = build_dataset_unpair(args)
     elif args.data_model == 'noisy':
         dataset = build_dataset_nmvc(args)
-    elif args.data_model in ['UI', 'UN', 'IN', 'UIN']:  #
+    elif args.data_model in ['IN']:  #
         dataset = build_dataset_Multi(args)
     else:
         raise ValueError(f"Unsupported data_model: {args.data_model}")
@@ -754,12 +699,6 @@ def Training(args, config):
             loss_1 += loss_rec.item()
 
 
-            # loss_walker, loss_walk, loss_visit, loss_cvt, loss_pro, loss_orth = PrototypeLearning(con_latent_list, latent_list, mask, Q, criterion, A, epoch)
-            # loss_2 += loss_walk
-            # loss_3 += loss_visit
-            # loss_4 += loss_cvt
-            # loss_5 += loss_pro
-            # loss_6 += loss_orth
             loss_mknn = mknn_contrastive_loss(
                 latent_list=latent_list,
                 mask = mask,
@@ -775,13 +714,7 @@ def Training(args, config):
             loss += mknn_weight * loss_mknn
 
             if proto_progress > 0.0:
-
-                loss_trans = PrototypeMatching(latent_list, mask, epoch, config, model, args) # PCC
-                # loss_trans = Directly_ProtoAlign(latent_list, model, epoch) # MSE-based
-                # loss_trans = Robust_Loss(latent_list, model, epoch) # Robust Contrastive Loss
-                # loss_trans = OT_align(latent_list, model, epoch)
-                #
-
+                loss_trans = PrototypeMatching(latent_list, mask, epoch, config, model, args)
 
                 loss_3 +=  loss_trans.item()
                 loss += match_weight * loss_trans
@@ -832,19 +765,6 @@ def Training(args, config):
             result['NMI'].append(nmi)
             result['PUR'].append(pur)
 
-            psc_result = test_PSC(
-                model=model,
-                dataset=dataset,
-                view_num=view_num,
-                args=args,
-                device=device,
-                epoch=epoch,
-                log_path=log_path,
-            )
-            psc = psc_result["PSC"]
-            purity = psc_result["Purity_mean"]
-            hard_purity = psc_result["Hard_Purity_mean"]
-            print(f"PSC: {psc}, Purity: {purity}, Hard-Purity: {hard_purity}")
 
     return result, Loss_list
 
@@ -870,16 +790,14 @@ def test_Kmeans(model, dataset, view_num, args, device, epoch, log_path=None):
             mask[view] = mask[view].to(device)
         with torch.no_grad():
             latent_list, _ = model(xs, mask)
-            eval_mode = str(getattr(args, 'data_model', 'incomplete')).upper()
-            if eval_mode == 'UNPAIR' or 'U' in eval_mode:
-                anchor_view = int(getattr(args, 'anchor_view', 0))
-                z = latent_list[anchor_view]
-            else:
-                mask = [mask[i].squeeze() for i in range(view_num)]
-                mask = torch.stack(mask)
-                C_list = [latent_list[view] * mask[view].unsqueeze(1) for view in range(view_num)]
-                observed_count = mask.sum(dim=0).clamp_min(1.0).unsqueeze(1)
-                z = torch.stack(C_list, dim=0).sum(dim=0) / observed_count
+
+
+            mask = [mask[i].squeeze() for i in range(view_num)]
+            mask = torch.stack(mask)
+            C_list = [latent_list[view] * mask[view].unsqueeze(1) for view in range(view_num)]
+            observed_count = mask.sum(dim=0).clamp_min(1.0).unsqueeze(1)
+            z = torch.stack(C_list, dim=0).sum(dim=0) / observed_count
+
 
             latent_fusion = z.cpu().numpy()
             all_latent_fusion.append(latent_fusion)
@@ -887,181 +805,13 @@ def test_Kmeans(model, dataset, view_num, args, device, epoch, log_path=None):
 
 
     Z_global = np.concatenate(all_latent_fusion, axis = 0)
-    raw_data_global = np.concatenate(raw_data, axis = 0)
     y_pre_global = kmeans_with_alignment(Z_global, labels_)
     acc, ari, nmi, pur = evaluate(labels_, y_pre_global)
 
 
-    '''Prototype Evaluation'''
-    Z = torch.tensor(Z_global, device = device)
-    rawData = torch.tensor(raw_data_global, device = device)
-
-
-    db_index = compute_db_index(Z, y_pre_global)
-    sc_score = compute_sc_score(Z, y_pre_global)
-    log_print(log_path, f"Cluster Quality: DB-{db_index}, SC-{sc_score}")
-
-
-
-    if (epoch + 1) % 100 == 0  or (epoch + 1) == 1:
-        # fig = plot_tsne(Z, labels_, Norm=False, savefilename='true_label_clustering_tsne.png', dataname = args.dataset)
-        # fig = plot_tsne(Z, y_pre_global, Norm=False, savefilename='label_pre_clustering_tsne.png')
-        if args.dataset == 'Caltech5V':
-            fig, embedding_2d = plot_tsne(
-                features=Z_global,
-                true_labels=labels_,
-                title=None,
-                random_state=42,
-                perplexity=50.0,    # 30
-                pca_dim=21, # 50
-                savefilename=f"clustering_tsne_epoch_{epoch + 1}.png",
-                dataname=args.dataset,
-            )
-        elif args.dataset == 'CUB':
-            fig, embedding_2d = plot_tsne(
-                features=Z_global,
-                true_labels=labels_,
-                title=None,
-                random_state=42,
-                perplexity=20.0,
-                pca_dim=30,
-                savefilename=f"clustering_tsne_epoch_{epoch + 1}.png",
-                dataname=args.dataset,
-            )
-        else:
-            fig, embedding_2d = plot_tsne(
-                features=Z_global,
-                true_labels=labels_,
-                title=None,
-                random_state=42,
-                perplexity=30.0,
-                pca_dim=50,
-                savefilename=f"clustering_tsne_epoch_{epoch + 1}.png",
-                dataname=args.dataset,
-            )
-
-
 
 
     return acc, ari, nmi, pur
-def Test_cluster(model, dataset, view_num, args, device, epoch):
-    model.eval()
-
-    # 测试的时候，就不要把大家打乱，也不要无情地落下任何人了哦
-    # （大家一定要一直在一起呢...）
-    data_loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        shuffle=False,  # 保持大家原本的顺序
-        drop_last=False,  # 就算最后不够一个 Batch，也要带上他们
-    )
-    labels_ = data_loader.dataset.labels.squeeze()
-    all_latent_fusion = []
-    raw_data = []
-    Z = []
-    for batch_idx, (xs, mask, idx) in enumerate(data_loader):
-        for view in range(view_num):
-            xs[view] = xs[view].to(device)
-            mask[view] = mask[view].to(device)
-
-        with torch.no_grad():
-            _, _, C, P_list, *_ = model(xs, mask)
-            mask = [mask[i].squeeze() for i in range(view_num)]
-            mask = torch.stack(mask)
-
-            C_list = [C[view] * mask[view].unsqueeze(1) for view in range(view_num)]
-
-            z = torch.stack(C_list, dim = 0).sum(dim = 0) / mask.sum(dim = 0).unsqueeze(1)
-            # z = C
-
-            z = z.cpu().numpy()
-            Z.append(z)
-
-            # P_tensor 的形状会是: [view_num, batch_size, num_clusters]
-            P_tensor = torch.stack([P_list[view] * mask[view].unsqueeze(1) for view in range(view_num)])
-
-            # 1. 跨视图比较：找出每个样本分到各个簇的“最大概率”
-            # max_prob_across_views 的形状是: [batch_size, num_clusters]
-            max_prob_across_views, _ = P_tensor.max(dim=0)
-
-            # 2. 簇内比较：在这个最大概率中，选出概率最大的那个簇作为大家最终的归宿
-            # final_cluster_idx 的形状是: [batch_size]
-            _, final_cluster_idx = max_prob_across_views.max(dim=1)
-
-            latent_fusion = final_cluster_idx.cpu().numpy()
-            all_latent_fusion.append(latent_fusion)
-            raw_data.append(xs[0].cpu().numpy())
-
-    Z_global = np.concatenate(all_latent_fusion, axis=0)
-    raw_data_global = np.concatenate(raw_data, axis=0)
-    Z = np.concatenate(Z, axis=0)
-    y_pre_global = Z_global
-    # print(y_pre_global)
-
-    # 看看大家是不是真的被好好分在一起了...
-    acc, ari, nmi, pur = evaluate(labels_, y_pre_global)
-
-    if (epoch + 1) == 5 or (epoch + 1) % 100 == 0:
-        fig = plot_tsne(Z, labels_, Norm=False, savefilename='true_label_clustering_tsne.png')
-
-
-    return acc, ari, nmi, pur
-
-
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-
-
-def visualize_tsne_with_prototypes(C, P):
-    """
-    将GPU上的张量 C 和 P 进行 t-SNE 降维并可视化。
-    C: 样本矩阵，形状为 (N, D)
-    P: 原型矩阵，形状为 (M, D)
-    """
-    # 那个... 必须先从GPU移到CPU上，并转换成numpy格式呢
-    C_np = C.detach().cpu().numpy()
-    P_np = P.detach().cpu().numpy()
-
-    # 把大家聚在一起... 只有一起做t-SNE，才能在一个空间里哦
-    combined = np.vstack((C_np, P_np))
-
-    # 初始化 t-SNE
-    # 如果数据量很大，可能需要调整 perplexity 参数
-    tsne = TSNE(n_components=2, random_state=42)
-
-    # 降维
-    combined_tsne = tsne.fit_transform(combined)
-
-    # 降维后再把大家分开
-    num_c = C_np.shape[0]
-    C_tsne = combined_tsne[:num_c, :]
-    P_tsne = combined_tsne[num_c:, :]
-
-    # 开始画图
-    plt.figure(figsize=(10, 8))
-
-    # 画样本 C (用普通的圆点表示)
-    plt.scatter(C_tsne[:, 0], C_tsne[:, 1], c='#1f77b4', label='Samples (C)', alpha=0.6, s=30)
-
-    # 画原型 P (按照你的要求，用特别的星号标记，稍微画大一点会更清楚呢)
-    plt.scatter(P_tsne[:, 0], P_tsne[:, 1], c='red', label='Prototypes (P)',
-                marker='*', s=250, edgecolors='black', linewidths=1)
-
-    plt.title('t-SNE Visualization of Samples and Prototypes')
-    plt.legend()
-    plt.xlabel('t-SNE Dimension 1')
-    plt.ylabel('t-SNE Dimension 2')
-
-    # 显示出来
-    plt.show()
-
-
-
-
-
-
 
 
 
