@@ -29,12 +29,10 @@ from model import *
 # from network import *
 from units.loss import *
 from units.IMVC_DATA import *
-from units.UMVC_DATA import build_dataset_unpair
 from units.NMVC_DATA import build_dataset_nmvc
 from units.CMVC_DATA import build_dataset_Multi
 from units.unit import *
 from units.evaluate import *
-from units.Visualization import *
 
 import torch.nn.functional as F
 from itertools import combinations
@@ -161,20 +159,16 @@ def pre_training(model, loader, criterion, view_num, args, device, config, log_p
 
 
 def visit_loss_from_aux(aux, eps=1e-8):
-    """
-    aux: compute_random_walk_T 返回的 aux
-         aux[v]["P_q2c"]: [K, N_v]
-    """
     loss = 0.0
     valid_views = 0
 
     for item in aux:
-        P_q2c = item["P_q2c"]          # [K, N_v]
+        P_q2c = item["P_q2c"]
 
         if P_q2c.size(1) == 0:
             continue
 
-        visit = P_q2c.mean(dim=0)     # [N_v]
+        visit = P_q2c.mean(dim=0)
         visit = visit / (visit.sum() + eps)
 
         uniform = torch.full_like(
@@ -219,7 +213,6 @@ def Transition(x, y, normalize = True,   tau = 0.2, eps = 1e-8):
 
 
 def transition_matrix_power(transition, steps):
-    """Compute the Markov matrix power, including P^0 = I."""
     steps = int(steps)
     if steps < 0:
         raise ValueError("prototype_walk_steps must be non-negative")
@@ -227,15 +220,7 @@ def transition_matrix_power(transition, steps):
 
 
 def PrototypeMatching(latent_list, mask, epoch, config, model, args, eps=1e-8):
-    """
-    Cycle-consistency prototype alignment.
 
-    Preferred path uses co-observed paired samples as the bridge between two
-    views. When missing_rate=1.0 removes all paired samples, the function falls
-    back to an unpaired prototype cycle. The fallback is weaker scientifically,
-    but it keeps the probability-transition ideal trainable in fully incomplete
-    settings.
-    """
     loss_list = []
     view_num = len(latent_list)
     min_pair_samples = int(config.get('prototype_min_pair_samples', 2))
@@ -338,13 +323,6 @@ def mknn_contrastive_loss(
     eps=1e-8,
 
 ):
-    """
-    Multi-view MKNN contrastive loss, generalized from CPMN.
-
-    Missing-view latent vectors are filtered by mask before building the MKNN
-    graph. Cross-view positives prefer co-observed paired samples, so the loss
-    uses actual multi-view correspondence instead of only distributional KNN.
-    """
 
     device = latent_list[0].device
     if mask is None:
@@ -370,11 +348,7 @@ def mknn_contrastive_loss(
         return max(1, min(k, n))
 
     def contrastive_from_pos_mask(sim, pos_mask, self_mask=None):
-        """
-        sim: [N, M], cosine similarity matrix.
-        pos_mask: [N, M], binary positive mask.
-        self_mask: optional [N, M] boolean mask for entries removed from denominator.
-        """
+
         valid = pos_mask.sum(dim=1) > 0
         if not valid.any():
             return None
@@ -390,9 +364,7 @@ def mknn_contrastive_loss(
         return loss_per_sample[valid].mean()
 
     def intra_view_loss(z):
-        """
-        Intra-view MKNN contrastive loss.
-        """
+
         n = z.size(0)
         if n <= 1:
             return None
@@ -419,13 +391,7 @@ def mknn_contrastive_loss(
         return contrastive_from_pos_mask(sim, pos_mask, self_mask=eye)
 
     def cross_view_loss(za, zb, paired=False):
-        """
-        Cross-view MKNN contrastive loss.
 
-        If paired=True, za[n] and zb[n] are two views of the same sample. The
-        diagonal is always a positive pair, and mutual cross-view neighbors are
-        added as semantic positives.
-        """
         na, nb = za.size(0), zb.size(0)
         if na == 0 or nb == 0:
             return None
@@ -459,7 +425,6 @@ def mknn_contrastive_loss(
         pos_mask = mutual.float()
         return contrastive_from_pos_mask(sim, pos_mask)
 
-    # 1. Intra-view MKNN contrastive loss
     intra_losses = []
     for z in latent_observed:
         loss_v = intra_view_loss(z)
@@ -470,8 +435,7 @@ def mknn_contrastive_loss(
         total_loss = total_loss + intra_weight * torch.stack(intra_losses).mean()
         loss_count += intra_weight
 
-    # 2. Cross-view MKNN contrastive loss. Any mode containing U must not
-    # trust row-wise correspondence and therefore uses the unpaired branch.
+
     runtime_data_model = str(config.get('runtime_data_model', '')).lower()
     runtime_missing_rate = float(config.get('runtime_missing_rate', 0.0))
     has_unpair = runtime_data_model == 'unpair' or 'U' in runtime_data_model.upper()
@@ -568,8 +532,7 @@ def Training(args, config):
 
     if args.data_model == 'incomplete':
         dataset = build_dataset(args)  # incomplete dataset
-    elif args.data_model == 'unpair':
-        dataset = build_dataset_unpair(args)
+
     elif args.data_model == 'noisy':
         dataset = build_dataset_nmvc(args)
     elif args.data_model in ['IN']:  #
@@ -677,7 +640,7 @@ def Training(args, config):
         clu_weight = args.lamda_3 * proto_progress
 
         for batch_idx, (xs, mask, idx) in enumerate(data_loader):
-            # print(xs[0].shape)
+
             for view in range(view_num):
                 xs[view] = xs[view].to(device)
                 mask[view] = mask[view].to(device)
@@ -770,16 +733,14 @@ def Training(args, config):
 
 
 
-# Clustering by KMeans
 def test_Kmeans(model, dataset, view_num, args, device, epoch, log_path=None):
     model.eval()
 
-    # 测试的时候，就不要把大家打乱，也不要无情地落下任何人了哦
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
-        shuffle=False,  # 保持大家原本的顺序
-        drop_last=False,  # 就算最后不够一个 Batch，也要带上他们
+        shuffle=False,
+        drop_last=False,
     )
     labels_ = data_loader.dataset.labels.squeeze()
     all_latent_fusion = []

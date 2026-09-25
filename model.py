@@ -121,10 +121,10 @@ class PrototypeGenerator(nn.Module):
         )
 
     def forward(self, Z):
-        # Z: [N, D]
-        Z = Z.unsqueeze(0)  # [1, N, D]
 
-        queries = self.proto_queries.unsqueeze(0)  # [1, K, D]
+        Z = Z.unsqueeze(0)
+
+        queries = self.proto_queries.unsqueeze(0)
 
         Q, A = self.attn(
             query=queries,
@@ -133,10 +133,10 @@ class PrototypeGenerator(nn.Module):
             need_weights=True
         )
 
-        Q = Q.squeeze(0)  # [K, D]
+        Q = Q.squeeze(0)
         Q = self.ffn(Q) + Q
 
-        return Q, A.squeeze(0)  # Q: [K, D], A: [K, N]
+        return Q, A.squeeze(0)
 
 
 
@@ -174,29 +174,26 @@ class ViewGate(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-        # 初始化为接近平均融合，训练一开始不破坏你当前的 C_mix baseline
         nn.init.zeros_(self.net[-1].weight)
         nn.init.zeros_(self.net[-1].bias)
 
     def forward(self, C_list, mask):
-        # C_list: list of [N, D]
-        # mask: list of [N, 1] or [N]
-        C = torch.stack(C_list, dim=0)              # [V, N, D]
+        C = torch.stack(C_list, dim=0)
         V, N, D = C.shape
 
-        mask = torch.stack([m.squeeze().bool() for m in mask], dim=0)  # [V, N]
+        mask = torch.stack([m.squeeze().bool() for m in mask], dim=0)
 
         view_ids = torch.arange(V, device=C.device)
         view_emb = self.view_embed(view_ids)[:, None, :].expand(V, N, D)
 
-        gate_input = torch.cat([C, view_emb], dim=-1)    # [V, N, 2D]
-        logits = self.net(gate_input).squeeze(-1)        # [V, N]
+        gate_input = torch.cat([C, view_emb], dim=-1)
+        logits = self.net(gate_input).squeeze(-1)
         logits = logits / self.temperature
 
         logits = logits.masked_fill(~mask, -1e9)
-        alpha = torch.softmax(logits, dim=0)             # [V, N], over views
+        alpha = torch.softmax(logits, dim=0)
 
-        C_mix = (alpha.unsqueeze(-1) * C).sum(dim=0)     # [N, D]
+        C_mix = (alpha.unsqueeze(-1) * C).sum(dim=0)
         return C_mix, alpha
 class ConExtractor(nn.Module):
     def __init__(self, dim, hidden_dim = 256, dp=0.2):
@@ -255,14 +252,5 @@ class CausalMVC(nn.Module):
         return latent_list, x_hat_list
 
 
-
-
-if __name__ == '__main__':
-    x = [[10, 128, 128], [20, 128, 128]]
-    config = {'view_num': 2, 'batch_size': 256, 'class_num': 2, 'device': 'cuda'}
-    model = CausalMVC(config, x, config['device'])
-    input = [torch.randn(256, 10), torch.randn(256, 20)]
-    mask = [torch.randint(0, 2, (256, 1)), torch.randint(0, 2, (256, 1))]
-    print(model(input, mask))
 
 
