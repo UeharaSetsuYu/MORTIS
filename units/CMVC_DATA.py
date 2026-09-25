@@ -7,33 +7,11 @@ from torch.utils.data import Dataset
 import numpy as np
 import scipy.io as sio
 from units.IMVC_DATA import load_ml_data as load_canonical_multiview_data
-
-
 data_info = dict(
-    Caltech={1: 'Caltech', 'N': 2386, 'K': 20, 'V': 6, 'n_input': [48, 40, 254, 1984, 512, 928]},
-    Scene_15={1: 'Scene_15', 'N': 4485, 'K': 15, 'V': 3, 'n_input': [20, 59, 40]},
-    LandUse_21={1: 'LandUse_21', 'N': 2100, 'K': 21, 'V': 3, 'n_input': [20, 59, 40]},
-    HW={1: 'HW', 'N': 2000, 'K': 10, 'V': 6, 'n_input': [216, 76, 64, 6, 240, 47]},
-    Wiki_fea={1: 'Wiki_fea', 'N': 2866, 'K': 10, 'V': 2, 'n_input': [128, 10]},
     CUB={1: 'CUB', 'N': 600, 'K': 10, 'V': 2, 'n_input': [1024, 300]},
-    CCV={1: 'CCV', 'N': 6673, 'K': 5, 'V': 3, 'n_input': [20, 20, 20]},
-    NUSWIDE={1: 'NUSWIDE', 'N': 5000, 'K': 5, 'V': 5, 'n_input': [65, 226, 145, 74, 129]},
-    PIE_face_10={1: 'PIE_face_10', 'N': 680, 'K': 10, 'V': 3, 'n_input': [484, 256, 279]},
-    BBCSport={1: 'BBCSport', 'N': 544, 'K': 5, 'V': 2, 'n_input': [3183, 3203]},
-    BDGP={1: 'BDGP', 'N': 2500, 'K': 5, 'V': 2, 'n_input': [1750, 79]},
-    NGs={1: 'NGs', 'N': 500, 'K': 5, 'V': 3, 'n_input': [2000, 2000, 2000]},
-    Hdigit={1: 'Hdigit', 'N': 10000, 'K': 10, 'V': 2, 'n_input': [784, 256]},
-    cora={1: 'cora', 'N': 2708, 'K': 7, 'V': 2, 'n_input': [2708, 1433]},
-    cifar10={1: 'cifar10', 'N': 50000, 'K': 10, 'V': 3, 'n_input': [512, 2048, 1024]},
-    stl10_fea={1: 'stl10_fea', 'N': 13000, 'K': 10, 'V': 3, 'n_input': [1024, 512, 2048]},
-    Reuters_1200={1: 'Reuters', 'N': 1200, 'K': 6, 'V': 5, 'n_input': [2000, 2000, 2000, 2000, 2000]},
-    UCI_Digits={1: 'UCI_Digits', 'N': 2000, 'K': 10, 'V': 3, 'n_input': [240, 76, 216, 47, 64, 6]},
-    NUSWIDE_deep={1: 'NUSWIDE_deep', 'N': 9000, 'K': 6, 'V': 2, 'n_input': [4096, 300]},
-    Caltech101_7={1: 'Caltech101_7', 'N': 1474, 'K': 10, 'V': 6, 'n_input': [48, 40, 254, 1984, 512, 928]},
-    Movies={1: 'Movies', 'N': 617, 'K': 17, 'V': 2, 'n_input': [1878, 1398]},
-    DHA={1: 'DHA', 'N': 483, 'K': 23, 'V': 2, 'n_input': [110, 6144]},
-    ALOI={1: 'ALOI', 'N': 10800, 'K': 100, 'V': 4, 'n_input': [77, 13, 64, 125]},
+    Caltech5V = {1: 'Caltech5V', 'N': 1400, 'K': 7, 'V': 5, 'n_input': [40, 254, 1984, 512, 928]},
 )
+
 
 
 
