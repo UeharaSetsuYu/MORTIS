@@ -86,7 +86,6 @@ class Comprehensive_MultiviewDataset(Dataset):
 
 
 def _derange_indices(indices, rng):
-    """Generate a derangement on the given indices as much as possible."""
     indices = np.asarray(indices, dtype=np.int64)
     if len(indices) <= 1:
         return indices.copy()
@@ -492,116 +491,18 @@ def parse_args():
     return parser.parse_args()
 
 
+
 def getData(name):
     data = []
     LABELS = 0
     np.random.seed(1)
-    index = [i for i in range(name['N'])]  # instance number of Dataset
+    index = [i for i in range(name['N'])]
     np.random.shuffle(index)
 
     Final_data = []
-    if name[1] == 'BBCSport':
-        data_path = './data/{}.mat'.format(name[1])
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][0][i].T
-            diff_view = diff_view.toarray()
 
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y']) - 1
-        LABELS = label[index]
-
-    elif name[1] == 'NUSWIDE':
-        data_path = './data/NUSWIDE.mat'
-
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X' + str(i + 1)].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'][0])
-        unique_elements = []
-        seen = set()
-        for x in label:
-            if x not in seen:
-                unique_elements.append(x)
-                seen.add(x)
-
-        # 创建映射：元素 -> 索引 (0, 1, 2, ...)
-        mapping = {val: idx for idx, val in enumerate(unique_elements)}
-
-        # 替换元素
-        result = [mapping[x] for x in label]
-
-        LABELS = result[index]
-    elif name[1] == 'Caltech':
-        data_path = 'D:\Data_Mining\Code\Datasets\Caltech101-20(.mat)\Caltech101-20.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][i][0].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
-        LABELS = label[index]
-    elif name[1] == 'Scene_15':
-        data_path = 'D:\Data_Mining\Code\Datasets\\0000AAA_Other_data\\Scene_15.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][0][i].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
-        LABELS = label[index]
-    elif name[1] == 'LandUse_21':
-        data_path = 'D:\Data_Mining\Code\Datasets\LandUse-21\LandUse_21.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][0][i].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
-        LABELS = label[index]
-    elif name[1] == 'HW':
-        data_path = './data/HW.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X' + str(i + 1)].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y']).T
-        LABELS = label[index]
-    elif name[1] == 'Wiki_fea':
-        data_path = './data/Wiki_fea.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][i][0].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
-        LABELS = label[index]
-    elif name[1] == 'CUB':
-        data_path = 'D:\Data_Mining\Code\Datasets\CUB\cub_googlenet_doc2vec_c10.mat'
+    if name[1] == 'CUB':
+        data_path = './data/cub_googlenet_doc2vec_c10.mat'
         data = sio.loadmat(data_path)
         for i in range(name['V']):
             diff_view = data['X'][0][i].astype(np.float32)
@@ -612,274 +513,22 @@ def getData(name):
             Final_data.append(shuffle_diff_view)
         label = np.array(data['gt'])
         LABELS = label[index]
-    elif name[1] == 'CCV':
-        data_path = './data/CCV.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][0][i].astype(np.float32)
 
+    elif name[1] == 'Caltech5V':
+        mat = sio.loadmat('./data/Caltech-5V.mat')
+        '''view_num equip 5'''
+        for i in range(5):
+            diff_view = mat['X' + str(i + 1)].astype(np.float32)
             mm = MinMaxScaler()
             std_view = mm.fit_transform(diff_view)
             shuffle_diff_view = std_view[index]
             Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
+
+        Y_list = mat['Y'].T
+        label = np.array(Y_list)
+        if min(label) == 1:
+            label -= -1
+
         LABELS = label[index]
-
-    elif name[1] == 'PIE_face_10':
-        data_path = './data/PIE_face_10.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X'][0][i].T.astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['gt'])
-        LABELS = label[index]
-    # ---------------------------------- Test Datasets ----------------------------------
-    elif name[1] == 'BDGP':
-        data_path = 'D:\Data_Mining\Code\Datasets\BDGP\BDGP.mat'
-        data = sio.loadmat(data_path)
-        for i in range(name['V']):
-            diff_view = data['X' + str(i + 1)].astype(np.float32)
-
-            # mm = Normalizer()
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y']).T
-        LABELS = label[index]
-
-    elif name[1] == 'NGs':
-        data_path = './data/NGs.mat'
-        data = sio.loadmat(data_path)
-
-        for i in range(name['V']):
-            diff_view = data['X'][i][0].astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y']) - 1
-        LABELS = label[index]
-        print(LABELS[0])
-
-    elif name[1] == 'Hdigit':
-        data_path = 'D:\Data_Mining\Code\Datasets\Hdigit\Hdigit.mat'
-        data = sio.loadmat(data_path)
-
-        for i in range(name['V']):
-            diff_view = data['data'][0][i].T.astype(np.float32)
-
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['truelabel'][0][0]).T - 1
-        LABELS = label[index]
-
-    elif name[1] == 'cora':
-        data_path = './data/Cora.mat'
-        data = sio.loadmat(data_path)
-        X = [data['coracites'], data['coracontent']]
-        for i in range(name['V']):
-            diff_view = X[i].astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['y']) - 1
-        LABELS = label[index]
-        # print(label.shape)
-
-    elif name[1] == 'cifar10':
-        data_path = 'D:\Data_Mining\Code\Datasets\Cifer_10\cifar10.mat'
-        data = sio.loadmat(data_path)
-
-        for i in range(name['V']):
-            diff_view = data['data'][i][0].T.astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['truelabel'][0][0]) - 1
-        LABELS = label[index]
-        # print(label.shape)
-
-    elif name[1] == 'stl10_fea':
-        file_path = './data/stl10_fea.mat'
-
-        with h5py.File(file_path, 'r') as f:
-            # # 查看文件中有哪些键
-            # print(list(f.keys()))
-
-            data = f['X']
-            refs = np.array(data).flatten()  # shape (5,)
-
-            views = []  # finally, storage datasets and each type of sample is array
-            for idx, ref in enumerate(refs):
-                # print(f"\n--- Processing view #{idx + 1} ---")
-                obj = f[ref]  # 解引用，可能是 Group 或 Dataset
-                # print("  HDF5 object type:", type(obj))
-                if isinstance(obj, h5py.Group):
-                    child_keys = list(obj.keys())
-                    # print("  Group keys:", child_keys)
-
-                    ds = obj[child_keys[0]]
-                    arr = ds[()]  # 转 numpy
-                elif isinstance(obj, h5py.Dataset):
-                    arr = obj[()]
-                else:
-                    raise RuntimeError(f"Unexpected HDF5 type: {type(obj)}")
-
-                # print(f"  view {idx + 1} data shape:", arr.shape)
-                views.append(arr.T)
-
-            data = f['Y']
-            refs = np.array(data).flatten()  # shape (5,)
-            label = refs.T
-
-        for i in views:
-            diff_view = i.astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-
-            Final_data.append(shuffle_diff_view)
-
-        LABELS = label[index].astype(int)
-        LABELS = LABELS.reshape(-1, 1)
-        # print(LABELS[0])
-        # print(LABELS)
-    elif name[1] == 'Reuters':
-        data_path = './data/Reuters.mat'
-        data = sio.loadmat(data_path)
-
-        for i in range(name['V']):
-            diff_view = data['fea'][0][i].toarray().astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['gt']) - 1
-        LABELS = label[index]
-        # print(label.shape)
-
-    elif name[1] == 'UCI_Digits':
-        '''
-            contains 2000 instance in 10 clusters for 6 views and feature dimension is [240, 76, 216, 47, 64, 6]
-        '''
-
-        data = sio.loadmat('./data/UCI_Digits.mat')
-
-        for i in range(name['V']):
-            diff_view = data['fea'][0][i].astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['gt'])
-        LABELS = label[index]
-
-    elif name[1] == 'Caltech101_7':
-
-        data = sio.loadmat('data/Caltech101_7.mat')
-
-        for i in range(name['V']):
-            diff_view = data['X'][i][0].astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'])
-        LABELS = label[index]
-
-    elif name[1] == 'NUSWIDE_deep':
-        '''
-
-        '''
-
-        data = sio.loadmat('./data/nuswide_deep_2_view.mat')
-        X = ['Img', 'Txt']
-        for i in range(name['V']):
-            diff_view = data[X[i]].astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['label'].T)
-        LABELS = label[index]
-    elif name[1] == 'Movies':
-        data = sio.loadmat('./data/Movies.mat')
-        for i in range(name['V']):
-            diff_view = data['X'][i][0].astype(np.float32)
-            # print(diff_view.shape)
-            mm = MinMaxScaler()
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['y'])
-        if np.min(label) == 1:
-            label -= 1
-        LABELS = label[index]
-    elif name[1] == 'DHA':
-        data = sio.loadmat('./data/DHA.mat')
-        for i in range(name['V']):
-            diff_view = data['X' + str(i + 1)].astype(np.float32)
-            # mm = MinMaxScaler()
-            # mm = Normalizer()
-            mm = StandardScaler()   # best standard method
-
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = std_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['Y'].T)
-        if np.min(label) == 1:
-            label -= 1
-        LABELS = label[index]
-    elif name[1] == 'ALOI':
-        data = sio.loadmat('./data/ALOI_100.mat')
-        for i in range(name['V']):
-            diff_view = data['fea'][0][i].astype(np.float32)
-            # mm = MinMaxScaler()
-            # mm = Normalizer()
-            mm = StandardScaler()
-
-            std_view = mm.fit_transform(diff_view)
-            shuffle_diff_view = diff_view[index]
-            Final_data.append(shuffle_diff_view)
-        label = np.array(data['gt'])
-        if np.min(label) == 1:
-            label -= 1
-        LABELS = label[index]
-    else:
-        assert ('No such file or directory')
 
     return Final_data, LABELS
-
-
-
-if __name__ == '__main__':
-    args = parse_args()
-    dataset = build_dataset_Multi(args)
-    print(dataset)
-    print('Dataset length:', len(dataset))
-    print('First 10 mask rows:')
-    print(dataset.mask_matrix[:10])
-    if dataset.pair_indices is not None:
-        print('First 10 pair-index rows:')
-        print(dataset.pair_indices[:10])
-    if dataset.noisy_mask is not None:
-        print('First 10 noisy-mask rows:')
-        print(dataset.noisy_mask[:10])
-

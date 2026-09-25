@@ -202,10 +202,6 @@ import pandas as pd
 
 
 def save_lists_to_excel(list1, list2, list3, list4, Data_name, filename = '_Clu_Performance'):
-    """
-    将 4 个列表保存到同一个 Excel 文件中。 ACC, ARI, NMI, PUR, respectively
-    """
-    # 将列表转换为 pd.Series，这能完美解决列表长度不一致导致无法创建 DataFrame 的问题
     data = {
         "ACC": pd.Series(list1),
         "ARI": pd.Series(list2),
@@ -214,10 +210,7 @@ def save_lists_to_excel(list1, list2, list3, list4, Data_name, filename = '_Clu_
     }
 
     df = pd.DataFrame(data)
-    filename = 'Result_Doc/' + Data_name + filename + ".xlsx"
-    # 将 DataFrame 保存为 Excel 文件，index=False 表示不保存行索引
-    df.to_excel(filename, sheet_name='Result', index=False)
-    print(f"Result Save：{filename}")
+
 
 
 def save_Loss_to_excel(list1, list2, list3, list4, Data_name):

@@ -37,9 +37,7 @@ def parse_args():
 
     # analysis
     parser.add_argument('--step_num', type = int, default = 5, help='number of steps')
-    parser.add_argument('--top_k', type=int, default=5, help='number of steps')
     parser.add_argument('--warming_up', type = int, default = 150, help='warm up')
-    parser.add_argument('--All_test', type = bool, default=False, help='test all models')
 
 
     # Dataset Noisy Setting

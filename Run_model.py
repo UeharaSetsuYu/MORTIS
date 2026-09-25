@@ -69,24 +69,6 @@ def main():
         all_raw_results['PUR'].append(pur_max)
 
 
-        # save_lists_to_excel(
-        #     Result['ACC'],
-        #     Result['ARI'],
-        #     Result['NMI'],
-        #     Result['PUR'],
-        #     args.dataset,
-        #     filename=f'_Result_missrate_{missrate:.1f}_run_{i + 1}'
-        # )
-
-        # save_lists_to_excel(
-        #     Loss['Loss_All'],
-        #     Loss['Loss_Adversarial'],
-        #     Loss['Loss_prototype'],
-        #     [],
-        #     Data_name=args.dataset,
-        #     filename=f'_Loss_missrate_{missrate:.1f}_run_{i + 1}'
-        # )
-
         print(
             f"Best Result | "
             f"ACC: {acc_max:.4f} | "
