@@ -1,4 +1,4 @@
-# MORTIS: Reciprocal Cyclic Calibration for Incomplete and Noisy Multi-View Clustering
+# RECIPROCAL PROTOTYPE CALIBRATION VIA CYCLIC TRANSITIONS FOR INCOMPLETE AND NOISY MULTI-VIEW CLUSTERING
 
  
 MORTIS is an imputation-free multi-view clustering framework designed for
