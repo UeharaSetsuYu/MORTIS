@@ -1,7 +1,6 @@
-# RECIPROCAL PROTOTYPE CALIBRATION VIA CYCLIC TRANSITIONS FOR INCOMPLETE AND NOISY MULTI-VIEW CLUSTERING
-
+# CROSS-VIEW PROTOTYPE CALIBRATION VIA RECIPROCAL CYCLIC TRANSITIONS FOR INCOMPLETE AND NOISY MULTI-VIEW CLUSTERING
  
-MORTIS is an imputation-free multi-view clustering framework designed for
+ReCAP is an imputation-free multi-view clustering framework designed for
 incomplete, noisy, and compound incomplete-and-noisy data. It stabilizes
 prototype estimation by preserving reliable neighborhood structures and
 calibrates cross-view prototypes through reciprocal cyclic transitions.
@@ -35,7 +34,7 @@ Requirements
 The code is implemented in Python with PyTorch. Install PyTorch according
 to your CUDA version and then install the remaining dependencies:
 ```
-pip install numpy scipy scikit-learn pandas h5py
-pip install matplotlib seaborn tqdm munkres scanpy openpyxl
+pip install numpy scipy scikit-learn pandas 
+pip install seaborn tqdm munkres scanpy openpyxl
 ```
 
