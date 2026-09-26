@@ -560,7 +560,7 @@ def Training(args, config):
     criterion = Loss()
 
 
-    model = CausalMVC(config, dim, device)
+    model = ReCAP(config, dim, device)
     model.to(device)
 
 

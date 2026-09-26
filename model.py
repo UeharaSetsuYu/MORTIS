@@ -9,7 +9,7 @@ from torch.nn.parameter import Parameter
 from sklearn.cluster import KMeans
 from scipy.linalg import orth
 from torch.nn.utils import spectral_norm
-'''自定义库 '''
+
 from units.config import *
 from torch.autograd import Function
 import torch
@@ -220,9 +220,9 @@ class ConExtractor(nn.Module):
 
 
 
-class CausalMVC(nn.Module):
+class ReCAP(nn.Module):
     def __init__(self, config, auto_dim, device, dp = 0.2):
-        super(CausalMVC, self).__init__()
+        super(ReCAP, self).__init__()
         ''' Datasets parameters '''
         self.view_num = config['view_num']
         self.input_dim = config['batch_size']
